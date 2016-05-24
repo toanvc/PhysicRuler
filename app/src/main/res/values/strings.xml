@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">Physic Ruler</string>
+    <string name="inch">&#160;inch</string>
+    <string name="cm">&#160;cm</string>
+</resources>

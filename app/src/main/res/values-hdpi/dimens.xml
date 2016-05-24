@@ -1,0 +1,14 @@
+<resources>
+
+    <!-- // hdpi -->
+    <!-- Default screen margins, per the Android Design guidelines. -->
+    <dimen name="txt_size">16dp</dimen>
+    <dimen name="scale_line_1">10dp</dimen>
+    <dimen name="scale_line_2">22dp</dimen>
+    <dimen name="scale_line_3">30dp</dimen>
+    <dimen name="scale_line_4">38dp</dimen>
+    <dimen name="scale_line_5">44dp</dimen>
+
+    <dimen name="line_size">2dp</dimen>
+    <dimen name="touch_size">25dp</dimen>
+</resources>

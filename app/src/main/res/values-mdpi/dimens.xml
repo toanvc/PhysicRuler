@@ -1,0 +1,17 @@
+<resources>
+
+    <!-- mdpi -->
+    <!-- Default screen margins, per the Android Design guidelines. -->
+    <dimen name="activity_horizontal_margin">16dp</dimen>
+    <dimen name="activity_vertical_margin">16dp</dimen>
+    <dimen name="text_small">8dp</dimen>
+    <dimen name="text_large">11dp</dimen>
+    <dimen name="scale_line_1">10dp</dimen>
+    <dimen name="scale_line_2">22dp</dimen>
+    <dimen name="scale_line_3">27dp</dimen>
+    <dimen name="scale_line_4">33dp</dimen>
+    <dimen name="scale_line_5">40dp</dimen>
+
+    <dimen name="line_size">1dp</dimen>
+    <dimen name="touch_size">20dp</dimen>
+</resources>
