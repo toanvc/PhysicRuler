@@ -25,7 +25,7 @@ import toan.ruler.utils.RulerUtils;
 public class RulerView extends View {
 
     public enum RulerType {
-        INCH, CM
+        INCH, CM, MM
     }
 
     //Object contains properties of 2 lines on ruler
@@ -99,8 +99,10 @@ public class RulerView extends View {
     public void onDraw(Canvas canvas) {
         if (rulerType == RulerType.INCH) {
             drawInch(canvas);
-        } else {
+        } else if (rulerType == RulerType.CM) {
             drawCm(canvas);
+        } else {
+            drawMm(canvas);
         }
 
         canvas.drawText("Measure: " + RulerUtils.formatNumber(result) + getUnit(rulerType), 30, height - 20 + 8, textPaint);
@@ -258,6 +260,26 @@ public class RulerView extends View {
         }
     }
 
+    private void drawMm(Canvas canvas) {
+        startPoint = 20;
+        int i = 0;
+        while (true) {
+            if (startPoint > screenSize - 20) {
+                break;
+            }
+
+            int size = (i % 10 == 0) ? scaleLineLevel3 : (i % 5 == 0) ? scaleLineLevel2 : scaleLineLevel1;
+            canvas.drawLine(width - size, startPoint, width, startPoint, rulerPaint);
+            if (i % 10 == 0) {
+
+                canvas.drawText(i + getUnit(rulerType), width - textStartPoint,
+                        startPoint + 8, textPaint);
+            }
+            startPoint = startPoint + pixelPerMillimeter;
+            i++;
+        }
+    }
+
     //initial line with normal state and touched state
     private Paint initPaintLine(Context context, int color) {
         float strokeWidth = getResources().getDimension(R.dimen.line_size);
@@ -315,13 +337,26 @@ public class RulerView extends View {
         double distance = Math.abs(touch1.y_axis - touch2.y_axis);
         if (rulerType == RulerType.CM) {
             return distance / pixelPerMillimeter / 10;
+        } else if (rulerType == RulerType.MM) {
+            return distance / pixelPerMillimeter;
         } else {
             return distance / pixelPerInch / 16;
         }
     }
 
     private String getUnit(RulerType type) {
-        String out = type == RulerType.CM ? getContext().getString(R.string.cm) : getContext().getString(R.string.inch);
+        String out = null;
+        switch (type) {
+            case INCH:
+                out = getContext().getString(R.string.inch);
+                break;
+            case CM:
+                out = getContext().getString(R.string.cm);
+                break;
+            case MM:
+                out = getContext().getString(R.string.mm);
+                break;
+        }
         return out;
     }
 

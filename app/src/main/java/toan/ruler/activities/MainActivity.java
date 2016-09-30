@@ -2,8 +2,9 @@ package toan.ruler.activities;
 
 import android.app.Activity;
 import android.os.Bundle;
-import android.widget.CompoundButton;
-import android.widget.Switch;
+import android.view.View;
+import android.widget.AdapterView;
+import android.widget.Spinner;
 
 import butterknife.Bind;
 import butterknife.ButterKnife;
@@ -12,8 +13,8 @@ import toan.ruler.widget.RulerView;
 
 public class MainActivity extends Activity {
 
-    @Bind(R.id.switch_unit)
-    Switch mSwitch;
+    @Bind(R.id.spinner_unit)
+    Spinner mSpinner;
 
     @Bind(R.id.ruler)
     RulerView mRulerView;
@@ -23,14 +24,27 @@ public class MainActivity extends Activity {
         setContentView(R.layout.activity_main);
 
         ButterKnife.bind(this);
-        mSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                if (isChecked) {
-                    mRulerView.setRulerType(RulerView.RulerType.CM);
-                } else {
-                    mRulerView.setRulerType(RulerView.RulerType.INCH);
+        mSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                switch (position) {
+                    case 0:
+                        mRulerView.setRulerType(RulerView.RulerType.INCH);
+                        break;
+                    case 1:
+                        mRulerView.setRulerType(RulerView.RulerType.CM);
+                        break;
+                    case 2:
+                        mRulerView.setRulerType(RulerView.RulerType.MM);
+                        break;
+
                 }
                 mRulerView.postInvalidate();
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+                mRulerView.setRulerType(RulerView.RulerType.INCH);
             }
         });
     }
