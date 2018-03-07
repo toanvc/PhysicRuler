@@ -2,16 +2,10 @@ package toan.ruler.widget
 
 import android.annotation.SuppressLint
 import android.content.Context
-import android.graphics.Canvas
-import android.graphics.Color
-import android.graphics.CornerPathEffect
-import android.graphics.Paint
-import android.graphics.PointF
-import android.graphics.Typeface
+import android.graphics.*
 import android.support.v4.content.ContextCompat
 import android.text.TextPaint
 import android.util.AttributeSet
-import android.util.SparseArray
 import android.view.MotionEvent
 import android.view.View
 
@@ -26,6 +20,7 @@ class RulerView(context: Context, attrs: AttributeSet) : View(context, attrs) {
 
     companion object {
         const val BORDER_LIMIT = 20f
+        const val TEXT_MARGIN = 20f
     }
 
     //2 objects
@@ -46,11 +41,18 @@ class RulerView(context: Context, attrs: AttributeSet) : View(context, attrs) {
 
     //paint
     private val rulerInchPaint = generatePaint(2f)
-    private val textPaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
+    private val textSmallPaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
         //        typeface = Typeface.createFromAsset(context.assets, "fonts/Roboto-Regular.ttf")
         style = Paint.Style.STROKE
         textSize = resources.getDimension(R.dimen.txt_size)
         color = Color.WHITE
+    }
+
+    private val textBigPaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.STROKE
+        textSize = resources.getDimension(R.dimen.txt_big_size)
+        color = Color.WHITE
+        typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
     }
 
     private val rulerPaint = generatePaint(0f)
@@ -86,7 +88,7 @@ class RulerView(context: Context, attrs: AttributeSet) : View(context, attrs) {
         } else {
             drawCm(canvas)
         }
-        canvas.drawText("Measure: " + RulerUtils.formatNumber(result) + getUnit(rulerType), 30f, height - 12f, textPaint)
+        canvas.drawText("Measure: " + RulerUtils.formatNumber(result) + getUnit(rulerType), 30f, height - 12f, textSmallPaint)
 
         canvas.drawLine(0f, touch1.y_axis, width.toFloat(), touch1.y_axis, touch1.getPaint())
         canvas.drawLine(0f, touch2.y_axis, width.toFloat(), touch2.y_axis, touch2.getPaint())
@@ -168,7 +170,9 @@ class RulerView(context: Context, attrs: AttributeSet) : View(context, attrs) {
             val size = if (i % 10 == 0) scaleLineLevel3 else if (i % 5 == 0) scaleLineLevel2 else scaleLineLevel1
             canvas.drawLine((width - size).toFloat(), startPoint, width.toFloat(), startPoint, rulerPaint)
             if (i % 10 == 0) {
-                canvas.drawText((i / 10).toString() + getUnit(rulerType), (width - textStartPoint).toFloat(), startPoint + 8, textPaint)
+                val textX = width - scaleLineLevel3 - TEXT_MARGIN
+                val textY = startPoint
+                drawRotateText(canvas, (i / 10).toString(), textX, textY)
             }
             startPoint += pixelPerMillimeter
             i++
@@ -187,16 +191,19 @@ class RulerView(context: Context, attrs: AttributeSet) : View(context, attrs) {
             }
             val size: Int
             var paint: Paint = rulerPaint
-
+            var textX = width - TEXT_MARGIN
+            val textY = startPoint
             when {
                 i % 16 == 0 -> {
                     size = scaleLineLevel5
                     paint = rulerInchPaint
-                    canvas.drawText((i / 16).toString() + getUnit(rulerType), (width - textStartPoint).toFloat(), startPoint + 8, textPaint)
+                    textX -= size
+                    drawRotateText(canvas, (i / 16).toString(), textX, textY, textBigPaint)
                 }
                 i % 8 == 0 -> {
                     size = scaleLineLevel4
-                    canvas.drawText((i / 8).toString() + "/2", (width - textStartPoint).toFloat(), startPoint + 8, textPaint)
+                    textX -= size
+                    drawRotateText(canvas, "${i / 8}/2", textX, textY)
                 }
                 i % 4 == 0 -> size = scaleLineLevel3
                 else -> size = if (i % 2 == 0) scaleLineLevel2 else scaleLineLevel1
@@ -208,6 +215,21 @@ class RulerView(context: Context, attrs: AttributeSet) : View(context, attrs) {
         }
     }
 
+    private fun drawRotateText(canvas: Canvas, text: String, x: Float, y: Float, paint: TextPaint = textSmallPaint) {
+        //need to recalculate text size, and draw on accurate position
+        val bounds = Rect()
+        paint.getTextBounds(text, 0, text.length, bounds)
+        val textHeight = bounds.height()
+        val textWidth = bounds.left + bounds.width()
+        //because we need to draw it in rotate 90 degree,
+        //then textWidth and textHeight from bounds are swapped
+        val accurateY = y - textWidth / 2
+        val accurateX = x - textHeight
+        canvas.save()
+        canvas.rotate(90f, accurateX, accurateY)
+        canvas.drawText(text, accurateX, accurateY, paint)
+        canvas.restore()
+    }
 
     /**
      * Calculate measure
