@@ -21,6 +21,9 @@ class RulerView(context: Context, attrs: AttributeSet) : View(context, attrs) {
     companion object {
         const val BORDER_LIMIT = 20f
         const val TEXT_MARGIN = 20f
+
+        const val ARROW_SCALE_X = 0.3f
+        const val ARROW_SCALE_Y = 0.5f
     }
 
     //2 objects
@@ -39,7 +42,24 @@ class RulerView(context: Context, attrs: AttributeSet) : View(context, attrs) {
     //ruler will use it for start pixel value on screen
     private var startPoint = 20f
 
+    private val scaleLineLevel1 = resources.getDimension(R.dimen.scale_line_1)
+    private val scaleLineLevel2 = resources.getDimension(R.dimen.scale_line_2)
+    private val scaleLineLevel3 = resources.getDimension(R.dimen.scale_line_3)
+    private val scaleLineLevel4 = resources.getDimension(R.dimen.scale_line_4)
+    private val scaleLineLevel5 = resources.getDimension(R.dimen.scale_line_5)
+
+    private val arrowSize = resources.getDimension(R.dimen.arrow_size)
+    private val arrowLeftMargin = resources.getDimension(R.dimen.scale_line_5)
+    private val minimumArrowLength = resources.getDimension(R.dimen.minimum_arrow_length)
+
+    private val pathArrowUp = Path()
+    private val pathArrowDown = Path()
+
     //paint
+    private val linePaint = generateTouchLinePaint(R.color.yellow)
+    private val highLinePaint = generateTouchLinePaint(R.color.cyan)
+    private val arrowPaint = generateTouchLinePaint(R.color.white)
+
     private val rulerInchPaint = generatePaint(2f)
     private val textSmallPaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
         //        typeface = Typeface.createFromAsset(context.assets, "fonts/Roboto-Regular.ttf")
@@ -57,14 +77,6 @@ class RulerView(context: Context, attrs: AttributeSet) : View(context, attrs) {
 
     private val rulerPaint = generatePaint(0f)
 
-
-    private val scaleLineLevel1 = resources.getDimension(R.dimen.scale_line_1).toInt()
-    private val scaleLineLevel2 = resources.getDimension(R.dimen.scale_line_2).toInt()
-    private val scaleLineLevel3 = resources.getDimension(R.dimen.scale_line_3).toInt()
-    private val scaleLineLevel4 = resources.getDimension(R.dimen.scale_line_4).toInt()
-    private val scaleLineLevel5 = resources.getDimension(R.dimen.scale_line_5).toInt()
-    private val textStartPoint = resources.getDimension(R.dimen.text_start_point).toInt()
-
     init {
         if (!isInEditMode) {
             val dm = resources.displayMetrics
@@ -78,8 +90,10 @@ class RulerView(context: Context, attrs: AttributeSet) : View(context, attrs) {
     override fun onLayout(changed: Boolean, left: Int, top: Int, right: Int, bottom: Int) {
         super.onLayout(changed, left, top, right, bottom)
         //initial value for 2 lines
-        touch1.y_axis = height / 4f
-        touch2.y_axis = height * 3f / 4
+        touch1.yAxis = height / 4f
+        touch2.yAxis = height * 3f / 4
+        setUpPaths()
+        calculateMeasure()
     }
 
     public override fun onDraw(canvas: Canvas) {
@@ -88,10 +102,19 @@ class RulerView(context: Context, attrs: AttributeSet) : View(context, attrs) {
         } else {
             drawCm(canvas)
         }
-        canvas.drawText("Measure: " + RulerUtils.formatNumber(result) + getUnit(rulerType), 30f, height - 12f, textSmallPaint)
+        val textResult = RulerUtils.formatNumber(result) + getUnit(rulerType)
 
-        canvas.drawLine(0f, touch1.y_axis, width.toFloat(), touch1.y_axis, touch1.getPaint())
-        canvas.drawLine(0f, touch2.y_axis, width.toFloat(), touch2.y_axis, touch2.getPaint())
+        if (checkArrowLength(minimumArrowLength)) {
+            canvas.drawText(textResult, 30f, height - 12f, textSmallPaint)
+        } else {
+            drawRotateText(canvas, textResult, arrowLeftMargin - 20, (touch2.yAxis + touch1.yAxis) / 2)
+        }
+
+        canvas.drawLine(0f, touch1.yAxis, width.toFloat(), touch1.yAxis, touch1.getPaint())
+        canvas.drawLine(0f, touch2.yAxis, width.toFloat(), touch2.yAxis, touch2.getPaint())
+        canvas.drawPath(pathArrowUp, arrowPaint)
+        canvas.drawPath(pathArrowDown, arrowPaint)
+        canvas.drawLine(arrowLeftMargin, touch1.yAxis, arrowLeftMargin, touch2.yAxis, arrowPaint)
     }
 
     @SuppressLint("ClickableViewAccessibility")
@@ -110,51 +133,92 @@ class RulerView(context: Context, attrs: AttributeSet) : View(context, attrs) {
                 // We have a new pointer
                 val y = event.getY(pointerIndex)
                 //check lines touch or not
-                if (Math.abs(y - touch1.y_axis) < delta) {
-                    touch1.active = true
-                    touch1.eventId = pointerId
-                } else if (Math.abs(y - touch2.y_axis) < delta) {
-                    touch2.active = true
-                    touch2.eventId = pointerId
+                when {
+                    y.near(touch1.yAxis) && y.near(touch2.yAxis) -> {
+                        //prefer touch2 when 2 touches on the top half screen
+                        if (y < height / 2) {
+                            touch2.setPointer(pointerId)
+                        } else {
+                            touch1.setPointer(pointerId)
+                        }
+                    }
+                    y.near(touch1.yAxis) -> touch1.setPointer(pointerId)
+                    y.near(touch2.yAxis) -> touch2.setPointer(pointerId)
                 }
             }
             MotionEvent.ACTION_MOVE -> { // a pointer was moved
                 val size = event.pointerCount
                 var i = 0
                 while (i < size) {
+                    val moveY = event.getY(i)
                     //moving line
                     if (touch1.active && event.getPointerId(i) == touch1.eventId) {
-                        touch1.y_axis = event.getY(i)
-
+                        touch1.yAxis = if (moveY > touch2.yAxis) touch2.yAxis else moveY
                     }
                     if (touch2.active && event.getPointerId(i) == touch2.eventId) {
-                        touch2.y_axis = event.getY(i)
+                        touch2.yAxis = if (moveY < touch1.yAxis) touch1.yAxis else moveY
                     }
                     i++
                 }
 
-                result = calculateMeasure()
+                calculateMeasure()
+
             }
             MotionEvent.ACTION_UP, MotionEvent.ACTION_POINTER_UP, MotionEvent.ACTION_CANCEL -> {
                 //update touches
                 if (touch1.active && pointerId == touch1.eventId) {
-                    touch1.active = false
+                    touch1.release()
                 }
                 if (touch2.active && pointerId == touch2.eventId) {
-                    touch2.active = false
+                    touch2.release()
                 }
             }
         }
+
+        setUpPaths()
         this.postInvalidate()
         return true
     }
 
+    /**
+     * toggle ruler type Inch - Cm
+     */
     fun setRulerType(type: RulerType) {
         this.rulerType = type
         //recalculate the result
-        result = calculateMeasure()
+        calculateMeasure()
     }
 
+    /**
+     * Set up paths for arrow
+     */
+    private fun setUpPaths() {
+        //we need to hide arrow when the space is not enough
+        if (checkArrowLength(arrowSize * 2)) {
+            setPathArrow(arrowLeftMargin, touch1.yAxis)
+            setPathArrow(arrowLeftMargin, touch2.yAxis, true)
+        } else {
+            setPathArrow(arrowLeftMargin, touch1.yAxis, true)
+            setPathArrow(arrowLeftMargin, touch2.yAxis)
+        }
+    }
+
+    /**
+     * Prepare 2 paths of arrow
+     */
+    private fun setPathArrow(x: Float, y: Float, isUpPath: Boolean = false) {
+        val (path, direction) = if (isUpPath) {
+            Pair(pathArrowUp, 1)
+        } else {
+            Pair(pathArrowDown, -1)
+        }
+        path.reset()
+        path.moveTo(x, y)
+        path.lineTo(x - arrowSize * ARROW_SCALE_X, y + arrowSize * direction)
+        path.lineTo(x, y + arrowSize * ARROW_SCALE_Y * direction)
+        path.lineTo(x + arrowSize * ARROW_SCALE_X, y + arrowSize * direction)
+        path.close()
+    }
 
     /**
      * Draw Cm type
@@ -168,7 +232,7 @@ class RulerView(context: Context, attrs: AttributeSet) : View(context, attrs) {
             }
 
             val size = if (i % 10 == 0) scaleLineLevel3 else if (i % 5 == 0) scaleLineLevel2 else scaleLineLevel1
-            canvas.drawLine((width - size).toFloat(), startPoint, width.toFloat(), startPoint, rulerPaint)
+            canvas.drawLine(width - size, startPoint, width.toFloat(), startPoint, rulerPaint)
             if (i % 10 == 0) {
                 val textX = width - scaleLineLevel3 - TEXT_MARGIN
                 val textY = startPoint
@@ -189,7 +253,7 @@ class RulerView(context: Context, attrs: AttributeSet) : View(context, attrs) {
             if (startPoint > height - BORDER_LIMIT) {
                 break
             }
-            val size: Int
+            val size: Float
             var paint: Paint = rulerPaint
             var textX = width - TEXT_MARGIN
             val textY = startPoint
@@ -208,7 +272,7 @@ class RulerView(context: Context, attrs: AttributeSet) : View(context, attrs) {
                 i % 4 == 0 -> size = scaleLineLevel3
                 else -> size = if (i % 2 == 0) scaleLineLevel2 else scaleLineLevel1
             }
-            canvas.drawLine((width - size).toFloat(), startPoint, width.toFloat(), startPoint, paint)
+            canvas.drawLine(width - size, startPoint, width.toFloat(), startPoint, paint)
 
             startPoint += pixelPerInch
             i++
@@ -236,9 +300,9 @@ class RulerView(context: Context, attrs: AttributeSet) : View(context, attrs) {
      *
      * @return result in inch or cm
      */
-    private fun calculateMeasure(): Float {
-        val distance = Math.abs(touch1.y_axis - touch2.y_axis)
-        return if (rulerType == RulerType.CM) {
+    private fun calculateMeasure() {
+        val distance = Math.abs(touch1.yAxis - touch2.yAxis)
+        result = if (rulerType == RulerType.CM) {
             distance / pixelPerMillimeter / 10
         } else {
             distance / pixelPerInch / 16
@@ -259,14 +323,16 @@ class RulerView(context: Context, attrs: AttributeSet) : View(context, attrs) {
     }
 
     //initial line with normal state and touched state
-    private fun generateBorderPaint(color: Int) = Paint().apply {
+    private fun generateTouchLinePaint(color: Int) = Paint().apply {
         val strokeWidth = resources.getDimension(R.dimen.line_size)
-        style = Paint.Style.FILL_AND_STROKE
+        style = Paint.Style.FILL
         setColor(ContextCompat.getColor(context, color))
-        strokeJoin = Paint.Join.ROUND
-        strokeCap = Paint.Cap.ROUND
         this.strokeWidth = strokeWidth
-        pathEffect = CornerPathEffect(10f)
+//        pathEffect = CornerPathEffect(10f)
+    }
+
+    private fun checkArrowLength(minLength: Float): Boolean {
+        return Math.abs(touch1.yAxis - touch2.yAxis) <= minimumArrowLength
     }
 
     enum class RulerType {
@@ -276,7 +342,7 @@ class RulerView(context: Context, attrs: AttributeSet) : View(context, attrs) {
     //Object contains properties of 2 lines on ruler
     private inner class Coordinate(var active: Boolean = false,
                                    var eventId: Int = 0) {
-        var y_axis: Float = 0f
+        var yAxis: Float = 0f
             set(value) {
                 //limited touch area, in screen only
                 field = when {
@@ -284,10 +350,21 @@ class RulerView(context: Context, attrs: AttributeSet) : View(context, attrs) {
                     value > height - BORDER_LIMIT -> height - BORDER_LIMIT
                     else -> value
                 }
-
             }
-        private val linePaint = generateBorderPaint(R.color.yellow)
-        private val highLinePaint = generateBorderPaint(R.color.cyan)
+
         fun getPaint() = if (active) highLinePaint else linePaint
+        fun setPointer(pointerId: Int) {
+            eventId = pointerId
+            active = true
+        }
+
+        fun release() {
+            eventId = 0
+            active = false
+        }
+    }
+
+    private fun Float.near(point: Float): Boolean {
+        return Math.abs(this - point) < delta
     }
 }

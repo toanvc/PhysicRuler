@@ -9,6 +9,7 @@ import butterknife.BindView
 import butterknife.ButterKnife
 import kotlinx.android.synthetic.main.activity_main.*
 import toan.ruler.R
+import toan.ruler.utils.UserPrefs
 import toan.ruler.widget.RulerView
 
 class MainActivity : Activity() {
@@ -18,13 +19,16 @@ class MainActivity : Activity() {
         setContentView(R.layout.activity_main)
 
         ButterKnife.bind(this)
+
         switch_unit.setOnCheckedChangeListener { buttonView, isChecked ->
             if (isChecked) {
                 ruler.setRulerType(RulerView.RulerType.CM)
             } else {
                 ruler.setRulerType(RulerView.RulerType.INCH)
             }
-            ruler.postInvalidate()
+            UserPrefs.saveRulerType(this, isChecked)
+            ruler.invalidate()
         }
+        switch_unit.isChecked = UserPrefs.getRulerType(this)
     }
 }

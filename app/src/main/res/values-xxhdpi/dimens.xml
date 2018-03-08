@@ -11,8 +11,6 @@
     <dimen name="scale_line_3">44dp</dimen>
     <dimen name="scale_line_4">50dp</dimen>
     <dimen name="scale_line_5">60dp</dimen>
-    <dimen name="text_start_point">120dp</dimen>
 
-    <dimen name="line_size">3dp</dimen>
-    <dimen name="touch_size">25dp</dimen>
+    <dimen name="line_size">1dp</dimen>
 </resources>
