@@ -5,6 +5,7 @@ Small tool runs as a ruler, with 2 options unit by inch or cm
 
 
 # Demo
+<img src="screenshots/demo.gif" width="30%">
 
 ### Screenshots
 <img src="screenshots/inch.png" width="30%">
