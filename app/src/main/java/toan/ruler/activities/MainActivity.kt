@@ -5,8 +5,6 @@ import android.os.Bundle
 import android.widget.CompoundButton
 import android.widget.Switch
 
-import butterknife.BindView
-import butterknife.ButterKnife
 import kotlinx.android.synthetic.main.activity_main.*
 import toan.ruler.R
 import toan.ruler.utils.UserPrefs
@@ -18,7 +16,6 @@ class MainActivity : Activity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        ButterKnife.bind(this)
 
         switch_unit.setOnCheckedChangeListener { buttonView, isChecked ->
             if (isChecked) {
