@@ -2,12 +2,12 @@ PhysicRuler
 ======================
 
 Small tool runs as a ruler, with 2 options unit by inch or cm
-
+You can download a demo from GooglePlay: [PhysicRuler](https://goo.gl/dufHQ3)
 
 # Demo
 <img src="screenshots/demo.gif" width="30%">
 
-You can download a demo from GooglePlay: [PhysicRuler](https://goo.gl/dufHQ3)
+
 ### Screenshots
 <img src="screenshots/inch.png" width="30%">
 <img src="screenshots/cm.png" width="30%">
