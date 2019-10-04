@@ -1,7 +1,7 @@
 PhysicsRuler
 ======================
 
-Small tool runs as a ruler, with 2 options unit by inch or cm
+Small tool runs as a ruler, with 2 options unit by inch or cm.
 You can download a demo from GooglePlay: [PhysicsRuler](https://goo.gl/dufHQ3)
 
 # Demo
